@@ -7,8 +7,9 @@
 
 // Patch printf so we can use it.
 #define LOAD_UHS_PRINTF_HELPER
-//#define DEBUG_PRINTF_EXTRA_HUGE 1
-//#define DEBUG_PRINTF_EXTRA_HUGE_UHS_HOST 1
+#define DEBUG_PRINTF_EXTRA_HUGE 1
+#define DEBUG_PRINTF_EXTRA_HUGE_ACM_HOST 1
+#define DEBUG_PRINTF_EXTRA_HUGE_UHS_HOST 1
 //#define DEBUG_PRINTF_EXTRA_HUGE_USB_HOST_SHIELD 1
 
 // Redirect debugging and printf
@@ -87,7 +88,7 @@ void setup() {
         while(!USB_HOST_SERIAL);
         USB_HOST_SERIAL.begin(115200);
 
-        printf("\r\nFS modem CDC-ACM 161025_1154");
+        printf("\r\nFS modem CDC-ACM 161025_2019");
         while(KINETIS_Usb.Init(1000) != 0);
          printf("\r\n't' for tty\r\n");
 }
