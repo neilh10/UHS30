@@ -18,6 +18,9 @@
 // enable testing output
 #define EHCI_TEST_DEV
 
+// Redirect debugging and printf
+#define USB_HOST_SERIAL Serial1
+
 #include <Arduino.h>
 #ifdef true
 #undef true
@@ -42,9 +45,10 @@ void setup() {
 #endif
         delay(5000); //wait 5 seconds for user to bring up a terminal
         USB_HOST_SERIAL.begin(115200);
-        USB_HOST_SERIAL.println("Start.");
+        USB_HOST_SERIAL.println("KINETIS_EHCI_TEST 161024_1822.");
         while(KINETIS_EHCI_Usb.Init(1000) != 0);
         KINETIS_EHCI_Usb.vbusPower(vbus_on);
+        //KINETIS_EHCI_Usb.vbusPower(vbus_off);
         // printf may be used after at least 1 host init
         printf("\r\n\r\nSWI_IRQ_NUM %i\r\n", SWI_IRQ_NUM);
         printf("\r\n\r\nUSB HOST READY.\r\n");

@@ -1,23 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<configurationDescriptor version="95">
+<configurationDescriptor version="97">
   <logicalFolder name="root" displayName="root" projectFiles="true" kind="ROOT">
     <df root="." name="0">
       <df name="libraries">
         <df name="RTClib">
-          <df name="examples">
-            <df name="datecalc">
-              <in>datecalc.ino</in>
-            </df>
-            <df name="ds1307Memory">
-              <in>ds1307Memory.ino</in>
-            </df>
-            <df name="ds1307SqwPin">
-              <in>ds1307SqwPin.ino</in>
-            </df>
-            <df name="RTC">
-              <in>RTC.ino</in>
-            </df>
-          </df>
           <in>RTClib.cpp</in>
           <in>asc_store.c</in>
           <in>asctime.c</in>
@@ -105,6 +91,9 @@
           <df name="UHS_CDC_ACM">
             <df name="examples">
               <df name="UHS_KINETIS_FS_HOST">
+                <df name="acm_modem">
+                  <in>acm_modem.ino</in>
+                </df>
                 <df name="acm_terminal">
                   <in>acm_terminal.ino</in>
                 </df>
@@ -112,15 +101,6 @@
               <df name="USB_HOST_SHIELD">
                 <df name="acm_terminal">
                   <in>acm_terminal.ino</in>
-                </df>
-              </df>
-            </df>
-          </df>
-          <df name="UHS_HID">
-            <df name="examples">
-              <df name="USB_HOST_SHIELD">
-                <df name="UHS_HID">
-                  <in>UHS_HID.ino</in>
                 </df>
               </df>
             </df>
@@ -241,6 +221,10 @@
             </preprocessorList>
           </ccTool>
         </makeTool>
+        <preBuild>
+          <preBuildCommandWorkingDir>.</preBuildCommandWorkingDir>
+          <preBuildCommand></preBuildCommand>
+        </preBuild>
       </makefileType>
       <item path="libraries/UHS_FS/FAT/FAT.cpp" ex="false" tool="1" flavor2="4">
       </item>
@@ -273,6 +257,11 @@
             ex="false"
             tool="1"
             flavor2="4">
+      </item>
+      <item path="libraries/UHS_host/UHS_CDC_ACM/examples/UHS_KINETIS_FS_HOST/acm_modem/acm_modem.ino"
+            ex="false"
+            tool="1"
+            flavor2="0">
       </item>
       <item path="libraries/UHS_host/UHS_CDC_ACM/examples/UHS_KINETIS_FS_HOST/acm_terminal/acm_terminal.ino"
             ex="false"
@@ -371,6 +360,10 @@
             </incDir>
           </ccTool>
         </makeTool>
+        <preBuild>
+          <preBuildCommandWorkingDir>.</preBuildCommandWorkingDir>
+          <preBuildCommand></preBuildCommand>
+        </preBuild>
       </makefileType>
       <item path="libraries/RTClib/RTClib.cpp" ex="false" tool="1" flavor2="4">
       </item>
