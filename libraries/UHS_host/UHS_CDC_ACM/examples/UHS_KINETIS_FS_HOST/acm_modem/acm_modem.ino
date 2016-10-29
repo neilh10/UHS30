@@ -88,7 +88,7 @@ void setup() {
         while(!USB_HOST_SERIAL);
         USB_HOST_SERIAL.begin(115200);
 
-        printf("\r\nFS modem CDC-ACM 161025_2019");
+        printf("\r\nFS modem CDC-ACM 161025_2302");
         while(KINETIS_Usb.Init(1000) != 0);
          printf("\r\n't' for tty\r\n");
 }
