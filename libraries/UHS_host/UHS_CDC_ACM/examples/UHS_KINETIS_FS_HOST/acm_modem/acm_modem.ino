@@ -7,11 +7,12 @@
 
 // Patch printf so we can use it.
 #define LOAD_UHS_PRINTF_HELPER
-#define DEBUG_PRINTF_EXTRA_HUGE 1
-#define DEBUG_PRINTF_EXTRA_HUGE_ACM_HOST 1
-#define DEBUG_PRINTF_EXTRA_HUGE_UHS_HOST 1
+//#define DEBUG_PRINTF_EXTRA_HUGE 1
+//#define DEBUG_PRINTF_EXTRA_HUGE_UHS_HOST 1
+//#define DEBUG_PRINTF_EXTRA_HUGE_USB_HUB 1
 //#define DEBUG_PRINTF_EXTRA_HUGE_USB_HOST_SHIELD 1
-
+//#define DEBUG_PRINTF_EXTRA_HUGE_ACM_HOST 1
+//#define UHS_DEBUG_USB_ADDRESS 1
 // Redirect debugging and printf
 #define USB_HOST_SERIAL Serial1
 
@@ -36,10 +37,6 @@
 #endif
 
 #include <UHS_host.h>
-
-UHS_KINETIS_FS_HOST KINETIS_Usb;
-
-UHS_USBHub hub_KINETIS(&KINETIS_Usb);
 
 class MY_ACM : public UHS_CDC_ACM {
 public:
@@ -66,7 +63,7 @@ uint8_t MY_ACM::OnStart(void) {
         }
 
         UHS_CDC_LINE_CODING lc;
-        lc.dwDTERate = 9600;
+        lc.dwDTERate = 115200;
         lc.bCharFormat = 0;
         lc.bParityType = 0;
         lc.bDataBits = 8;
@@ -82,10 +79,39 @@ uint8_t MY_ACM::OnStart(void) {
         return 0;
 }
 
-MY_ACM Acm(&KINETIS_Usb);
+
+UHS_KINETIS_FS_HOST *KINETIS_Usb;
+UHS_USBHub *hub_KINETIS1;
+UHS_USBHub *hub_KINETIS2;
+MY_ACM *Acm;
 
 void setup() {
+        // This is so you can be ensured the dev board has power,
+        // since teensy lacks a power indicator LED.
+        // It also flashes at each stage.
+        // If the code wedges at any point, you'll see the LED stuck on.
+        pinMode(LED_BUILTIN, OUTPUT);
+        digitalWriteFast(LED_BUILTIN, HIGH);
+        delay(250);
+        digitalWriteFast(LED_BUILTIN, LOW);
+        delay(250);
+        digitalWriteFast(LED_BUILTIN, HIGH);
+        delay(250);
+        KINETIS_Usb = new UHS_KINETIS_FS_HOST();
+        hub_KINETIS1 = new UHS_USBHub(KINETIS_Usb);
+        digitalWriteFast(LED_BUILTIN, LOW);
+        delay(250);
+        digitalWriteFast(LED_BUILTIN, HIGH);
+        delay(250);
+        hub_KINETIS2 = new UHS_USBHub(KINETIS_Usb);
+        Acm = new MY_ACM(KINETIS_Usb);
+        digitalWriteFast(LED_BUILTIN, LOW);
+        delay(250);
+        digitalWriteFast(LED_BUILTIN, HIGH);
+        delay(250);
         while(!USB_HOST_SERIAL);
+        digitalWriteFast(LED_BUILTIN, LOW);
+        delay(250);
         USB_HOST_SERIAL.begin(115200);
 
         printf("\r\nFS modem CDC-ACM 161025_2302");
@@ -100,44 +126,47 @@ usb_state_t  usbfs_state_e = US_INIT;
 usb_state_t  usbfs_state_old_e = US_INIT;
 
 void loop() {
-        uint8_t d;
+  uint8_t d;
 
-        if (usbfs_state_old_e!=usbfs_state_e) {
-              printf("StateChange To=%d, Frm=%d\r\n",usbfs_state_e,usbfs_state_old_e);
-                usbfs_state_old_e=usbfs_state_e;
+  if (usbfs_state_old_e!=usbfs_state_e) {
+     printf("StateChange To=%d, Frm=%d\r\n",usbfs_state_e,usbfs_state_old_e);
+     usbfs_state_old_e=usbfs_state_e;
+  }
+
+  if (US_TTY!=usbfs_state_e) {
+     if (USB_HOST_SERIAL.available() > 0) {
+
+        d = USB_HOST_SERIAL.read();
+        if(d=='s') {
+            printf("USB0_INTEN: 0x%x ", USB0_INTEN);
+            printf("USB0_CTL: 0x%x\r\n", USB0_CTL);
+        //} else if(d=='p') {
+        ///KINETIS_Usb.poopOutStatus();
+        } else if(d=='t') {
+            usbfs_state_e=US_TTY;
+            printf("TTY mode <ESC> to exit\r\n");
         }
-       if (US_TTY!=usbfs_state_e) {
-                if (USB_HOST_SERIAL.available() > 0) {
+      }
 
-                         d = USB_HOST_SERIAL.read();
-                         if(d=='s') {
-                                 printf("USB0_INTEN: 0x%x ", USB0_INTEN);
-                                 printf("USB0_CTL: 0x%x\r\n", USB0_CTL);
-                         //} else if(d=='p') {
-                                 ///KINETIS_Usb.poopOutStatus();
-                         } else if(d=='t') {
-                                 usbfs_state_e=US_TTY;
-                                printf("TTY mode <ESC> to exit\r\n");
-                         }
-                }
-
-       }else  if(Acm.isReady() ) {
+   }else if(Acm.isReady() ) {
                 uint8_t rcode;
 
                 /* read the keyboard */
                 if(USB_HOST_SERIAL.available()) {
+                        digitalWriteFast(LED_BUILTIN, HIGH);
                         uint8_t data = USB_HOST_SERIAL.read();
 #define ASCII_ESC 27
                         if (ASCII_ESC ==data) {
                                 usbfs_state_e=US_INIT;
                         }else {
                                 /* send to client */
-                                rcode = Acm.Write(1, &data);
+                                rcode = Acm->Write(1, &data);
                                 if(rcode) {
-                                        printf("\r\nError %i on write\r\n", rcode);
-                                        return;
+                                   printf("\r\nError %i on write\r\n", rcode);
+                                   return;
                                 }
                         }
+                        digitalWriteFast(LED_BUILTIN, LOW);
                 }
 
 
@@ -148,19 +177,20 @@ void loop() {
                  */
                 uint8_t buf[64];
                 uint16_t rcvd = 64;
-                rcode = Acm.Read(&rcvd, buf);
+                rcode = Acm->Read(&rcvd, buf);
                 if(rcode && rcode != hrNAK) {
                         printf("\r\nError %i on read\r\n", rcode);
                         return;
                 }
 
                 if(rcvd) {
+                        digitalWriteFast(LED_BUILTIN, HIGH);
                         // More than zero bytes received, display the text.
                         for(uint16_t i = 0; i < rcvd; i++) {
                                 putc((char)buf[i], stdout);
-                                //printf_P(PSTR("%c"),(char)buf[i]);
                         }
                         fflush(stdout);
+                        digitalWriteFast(LED_BUILTIN, LOW);
                 }
         }
 }
