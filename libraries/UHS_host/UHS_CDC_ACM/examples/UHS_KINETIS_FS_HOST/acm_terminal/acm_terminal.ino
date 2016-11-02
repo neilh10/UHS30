@@ -7,11 +7,12 @@
 
 // Patch printf so we can use it.
 #define LOAD_UHS_PRINTF_HELPER
-//#define DEBUG_PRINTF_EXTRA_HUGE 1
-//#define DEBUG_PRINTF_EXTRA_HUGE_UHS_HOST 1
-#define DEBUG_PRINTF_EXTRA_HUGE_USB_HUB 1
+#define ENABLE_UHS_DEBUGGING 1
+#define DEBUG_PRINTF_EXTRA_HUGE 1
+#define DEBUG_PRINTF_EXTRA_HUGE_UHS_HOST 1
+//#define DEBUG_PRINTF_EXTRA_HUGE_USB_HUB 1
 //#define DEBUG_PRINTF_EXTRA_HUGE_USB_HOST_SHIELD 1
-//#define DEBUG_PRINTF_EXTRA_HUGE_ACM_HOST 1
+#define DEBUG_PRINTF_EXTRA_HUGE_ACM_HOST 1
 #define UHS_DEBUG_USB_ADDRESS 1
 // Redirect debugging and printf
 #define USB_HOST_SERIAL Serial1
@@ -27,6 +28,9 @@
 #define LOAD_UHS_CDC_ACM_PROLIFIC
 // This needs testing.
 #define LOAD_UHS_CDC_ACM_FTDI
+
+#define UHS_DEVICE_WINDOWS_USB_SPEC_VIOLATION_DESCRIPTOR_DEVICE 1
+#define PROG_NAME "Wk161101_1833CDC-ACM test program...\r\n"
 
 #include <Arduino.h>
 #ifdef true
@@ -114,7 +118,9 @@ void setup() {
         delay(250);
         USB_HOST_SERIAL.begin(115200);
 
-        printf_P(PSTR("\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\nStarting CDC-ACM test program...\r\n"));
+        printf_P(PSTR("\r\n"
+                PROG_NAME ));
+
         while(KINETIS_Usb->Init(1000) != 0);
         printf_P(PSTR("\r\n\r\nWaiting for Connection...\r\n"));
 }

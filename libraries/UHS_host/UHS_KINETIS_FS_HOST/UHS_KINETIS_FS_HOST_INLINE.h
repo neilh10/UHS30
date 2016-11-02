@@ -329,7 +329,7 @@ void UHS_NI UHS_KINETIS_FS_HOST::ISRTask(void) {
                 HOST_DUBUG("ISR: TOKDNE. Pid: %lx", pid);
                 HOST_DUBUG(", count: %x", count);
                 if(count) {
-                        HOST_DUBUG(". Data: %lx", *(uint32_t *)(buf));
+                        HOST_DUBUG(". Data: %lx ", *(uint32_t *)(buf));
                 }
                 HOST_DUBUG("\r\n");
 
@@ -417,7 +417,7 @@ uint8_t UHS_NI UHS_KINETIS_FS_HOST::SetAddress(uint8_t addr, uint8_t ep, UHS_EpI
 
 
         if(!p->epinfo) {
-                return UHS_HOST_ERROR_NULL_EPINFO;
+                return UHS_HOST_ERROR_NULL_EPINFO6;
         }
 
         *ppep = getEpInfoEntry(addr, ep);
@@ -624,8 +624,8 @@ uint8_t UHS_NI UHS_KINETIS_FS_HOST::InTransfer(UHS_EpInfo *pep, uint16_t nak_lim
         uint8_t maxpktsize = pep->maxPktSize;
         uint8_t ep = pep->epAddr;
 
-        USBTRACE2("Requesting ", nbytes);
-        USBTRACE2("maxpktsize: ", maxpktsize);
+        USBTRACE2("Requesting:0x", nbytes);
+        USBTRACE2("maxpktsize:0x", maxpktsize);
 
         *nbytesptr = 0;
 
@@ -639,19 +639,22 @@ uint8_t UHS_NI UHS_KINETIS_FS_HOST::InTransfer(UHS_EpInfo *pep, uint16_t nak_lim
         datalen = maxpktsize;
 
         while(1) {
+                HOST_DUBUG("datalen: %lu (%u-%u)", datalen,*nbytesptr,nbytes );
                 if(datalen + *nbytesptr > nbytes) { // get less than maxpktsize if we don't need a full maxpktsize
                         datalen = nbytes - *nbytesptr;
                 }
-                HOST_DUBUG("datalen: %lu \r\n", datalen);
+                 HOST_DUBUG("datalen=%lu\r\n", datalen);
+
                 endpoint0_receive(data_in_buf, datalen); // setup internal buffer
+                 HOST_DUBUG("dispatchP: %i", nak_limit );
                 rcode = dispatchPkt(UHS_KINETIS_FS_TOKEN_DATA_IN, ep, nak_limit); //dispatch packet
 
                 pktsize = b_newToken.desc >> 16; // how many bytes we actually got
 
-                HOST_DUBUG("pktsize: %i \r\n", pktsize);
+                HOST_DUBUG("pktsize1: %i/%i \r\n", pktsize,maxpktsize);
 #if ENABLE_UHS_DEBUGGING
                 uint8_t i = 0;
-                HOST_DUBUG("-----Data packet: ");
+                HOST_DUBUG("-----Data packet(%d): ",rcode);
                 for(i = 0; i < pktsize; i++) {
                         HOST_DUBUG("%02x ", data_in_buf[i]);
                 }
@@ -670,10 +673,11 @@ uint8_t UHS_NI UHS_KINETIS_FS_HOST::InTransfer(UHS_EpInfo *pep, uint16_t nak_lim
                         //HOST_DUBUG(">>>>hrUNDEF>>>> InTransfer Problem! dispatchPkt ", rcode);
                         break; //should be 0, indicating ACK. Else return error code.
                 }
-
+                HOST_DUBUG("pktsize2: %u, %u, %u", pktsize,*nbytesptr,nbytes );
                 if(pktsize + *nbytesptr > nbytes) { // adjust pktsize if we don't need all the bytes we just got
                         pktsize = nbytes - *nbytesptr;
                 }
+                HOST_DUBUG(" pktsize=%u\n\r",pktsize);
 
                 memcpy(p_buffer, data_in_buf, pktsize); // copy packet into buffer
                 p_buffer += pktsize; // advance pointer for next packet
@@ -685,6 +689,7 @@ uint8_t UHS_NI UHS_KINETIS_FS_HOST::InTransfer(UHS_EpInfo *pep, uint16_t nak_lim
                 if((pktsize < maxpktsize) || (*nbytesptr >= nbytes)) {
                         pep->bmRcvToggle = ep0_rx_data_toggle;
                         rcode = 0;
+                        HOST_DUBUG("PktReceived\r\n");
                         break;
                 }
         }
@@ -742,8 +747,9 @@ UHS_EpInfo * UHS_NI UHS_KINETIS_FS_HOST::ctrlReqOpen(uint8_t addr, uint64_t Requ
                         // USBTRACE2(", bRequest: ", bRequest);
                         // USBTRACE(">>>>>>>>>>>> dispatchPkt Failed <<<<<<<<<<<<<< \r\n");
                         pep = NULL;
+                        HOST_DUBUG("ctrlReqOpen dispatchPkt err:0x%x\r\n",rcode);
                 }
-        }
+        } else {HOST_DUBUG("ctrlReqOpen SetAddress err:0x%x\r\n",rcode); }
 
         return pep;
 }

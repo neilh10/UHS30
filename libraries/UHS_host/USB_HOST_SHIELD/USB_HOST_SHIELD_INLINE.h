@@ -389,7 +389,7 @@ uint8_t UHS_NI MAX3421E_HOST::SetAddress(uint8_t addr, uint8_t ep, UHS_EpInfo **
                 return UHS_HOST_ERROR_NO_ADDRESS_IN_POOL;
 
         if(!p->epinfo)
-                return UHS_HOST_ERROR_NULL_EPINFO;
+                return UHS_HOST_ERROR_NULL_EPINFO7;
 
         *ppep = getEpInfoEntry(addr, ep);
 

@@ -48,7 +48,14 @@ e-mail   :  support@circuitsathome.com
 #define UHS_HOST_ERROR_ADDRESS_POOL_FULL                0xD4
 #define UHS_HOST_ERROR_HUB_ADDRESS_OVERFLOW             0xD5
 #define UHS_HOST_ERROR_NO_ADDRESS_IN_POOL               0xD6
-#define UHS_HOST_ERROR_NULL_EPINFO                      0xD7
+//#define UHS_HOST_ERROR_NULL_EPINFO                      0xD7
+#define UHS_HOST_ERROR_NULL_EPINFO1                      0xC1
+#define UHS_HOST_ERROR_NULL_EPINFO2                      0xC2
+#define UHS_HOST_ERROR_NULL_EPINFO3                      0xC3
+#define UHS_HOST_ERROR_NULL_EPINFO4                      0xC4
+#define UHS_HOST_ERROR_NULL_EPINFO5                      0xC5
+#define UHS_HOST_ERROR_NULL_EPINFO6                      0xC6
+#define UHS_HOST_ERROR_NULL_EPINFO7                      0xC7
 #define UHS_HOST_ERROR_BAD_ARGUMENT                     0xD8
 #define UHS_HOST_ERROR_DEVICE_DRIVER_BUSY               0xD9
 #define UHS_HOST_ERROR_BAD_MAX_PACKET_SIZE              0xDA
@@ -238,8 +245,10 @@ public:
         uint8_t UHS_NI EPClearHalt(uint8_t addr, uint8_t ep);
 
         uint8_t UHS_NI ctrlReq(uint8_t addr, uint64_t Request, uint16_t nbytes, uint8_t* dataptr);
+        uint8_t UHS_NI ctrlReq(uint8_t addr, uint64_t Request, uint16_t nbytes, uint8_t* dataptr, uint8_t shortMsg);
 
         uint8_t UHS_NI getDevDescr(uint8_t addr, uint16_t nbytes, uint8_t* dataptr);
+        uint8_t UHS_NI getDevDescr(uint8_t addr, uint16_t nbytes, uint8_t* dataptr,  uint8_t shortMsg);
 
         uint8_t UHS_NI getConfDescr(uint8_t addr, uint16_t nbytes, uint8_t conf, uint8_t* dataptr);
 
