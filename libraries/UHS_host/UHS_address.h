@@ -155,7 +155,7 @@ public:
                 thePool[0].address.devAddress = 0;
                 thePool[0].epinfo = &dev0ep;
                 dev0ep.epAddr = 0;
-                dev0ep.maxPktSize = 0x10;//njh was 8; try starting at 0x40 and work down
+                dev0ep.maxPktSize = 0x40;//njh was 8; try starting at 0x40 and work down
                 dev0ep.epAttribs = 0; //set DATA0/1 toggles to 0
                 dev0ep.bmNakPower = USB_NAK_MAX_POWER;
                 InitAllAddresses();
