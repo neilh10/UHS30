@@ -30,7 +30,7 @@
 #define LOAD_UHS_CDC_ACM_FTDI
 
 #define UHS_DEVICE_WINDOWS_USB_SPEC_VIOLATION_DESCRIPTOR_DEVICE 1
-#define PROG_NAME "Wk161101_1833CDC-ACM test program...\r\n"
+#define PROG_NAME "Wk161101_2046CDC-ACM test program...\r\n"
 
 #include <Arduino.h>
 #ifdef true
