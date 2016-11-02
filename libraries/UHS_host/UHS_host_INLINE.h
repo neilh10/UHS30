@@ -262,7 +262,7 @@ again:
         HOST_DUBUG("\r\nConfiguring(%d)...\r\n",retries);
 #if defined(UHS_DEVICE_WINDOWS_USB_SPEC_VIOLATION_DESCRIPTOR_DEVICE)
         // Emulate Windows bug part 1, thanks M$
-        rcode = (ctrlReq(addr, mkSETUP_PKT8(UHS_bmREQ_GET_DESCR, USB_REQUEST_GET_DESCRIPTOR, 0x00, USB_DESCRIPTOR_DEVICE, 0x0000, 64), nbytes, dataptr))
+        //rcode = (ctrlReq(addr, mkSETUP_PKT8(UHS_bmREQ_GET_DESCR, USB_REQUEST_GET_DESCRIPTOR, 0x00, USB_DESCRIPTOR_DEVICE, 0x0000, 64), nbytes, dataptr))
        {
 #if 0
             uint8_t ta = addrPool.AllocAddress(parent, false, port);
