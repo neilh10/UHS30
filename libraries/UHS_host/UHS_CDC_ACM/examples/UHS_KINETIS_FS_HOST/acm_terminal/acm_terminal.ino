@@ -7,14 +7,15 @@
 
 // Patch printf so we can use it.
 #define LOAD_UHS_PRINTF_HELPER
-#define ENABLE_UHS_DEBUGGING 1
-#define DEBUG_PRINTF_EXTRA_HUGE 1
-#define DEBUG_PRINTF_EXTRA_HUGE_UHS_HOST 1
+//#define DEBUG_PRINTF_EXTRA_HUGE 1
+//#define DEBUG_PRINTF_EXTRA_HUGE_UHS_HOST 1
 //#define DEBUG_PRINTF_EXTRA_HUGE_USB_HUB 1
 //#define DEBUG_PRINTF_EXTRA_HUGE_USB_HOST_SHIELD 1
-#define DEBUG_PRINTF_EXTRA_HUGE_ACM_HOST 1
+//#define DEBUG_PRINTF_EXTRA_HUGE_ACM_HOST 1
+//#define ENABLE_UHS_DEBUGGING 1
 #define UHS_DEBUG_USB_ADDRESS 1
 // Redirect debugging and printf
+#define UHS_DEVICE_WINDOWS_USB_SPEC_VIOLATION_DESCRIPTOR_DEVICE 1
 #define USB_HOST_SERIAL Serial1
 
 
@@ -29,8 +30,7 @@
 // This needs testing.
 #define LOAD_UHS_CDC_ACM_FTDI
 
-#define UHS_DEVICE_WINDOWS_USB_SPEC_VIOLATION_DESCRIPTOR_DEVICE 1
-#define PROG_NAME "Wk161101_2046CDC-ACM test program...\r\n"
+#define PROG_NAME "Wk161102_1653CDC-ACM test program...\r\n"
 
 #include <Arduino.h>
 #ifdef true
@@ -101,6 +101,11 @@ void setup() {
         delay(250);
         digitalWriteFast(LED_BUILTIN, HIGH);
         delay(250);
+
+        // USB data switcher, PC -> device.
+        pinMode(5,OUTPUT),
+        digitalWriteFast(5, HIGH);
+
         KINETIS_Usb = new UHS_KINETIS_FS_HOST();
         hub_KINETIS1 = new UHS_USBHub(KINETIS_Usb);
         digitalWriteFast(LED_BUILTIN, LOW);

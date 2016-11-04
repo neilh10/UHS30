@@ -342,7 +342,7 @@ void UHS_NI UHS_KINETIS_FS_HOST::ISRTask(void) {
                 HOST_DUBUG("ISR: TOKDNE. Pid: %lx", pid);
                 HOST_DUBUG(", count: %x", count);
                 if(count) {
-                        HOST_DUBUG(". Data: %lx ", *(uint32_t *)(buf));
+                        HOST_DUBUG(". Data: %lx", *(uint32_t *)(buf));
                 }
                 HOST_DUBUG("\r\n");
 
@@ -656,18 +656,17 @@ uint8_t UHS_NI UHS_KINETIS_FS_HOST::InTransfer(UHS_EpInfo *pep, uint16_t nak_lim
                 if(datalen + *nbytesptr > nbytes) { // get less than maxpktsize if we don't need a full maxpktsize
                         datalen = nbytes - *nbytesptr;
                 }
-                 HOST_DUBUG("datalen=%lu\r\n", datalen);
-
+                HOST_DUBUG("datalen: %lu \r\n", datalen);
                 endpoint0_receive(data_in_buf, datalen); // setup internal buffer
                  HOST_DUBUG("dispatchP: %i", nak_limit );
                 rcode = dispatchPkt(UHS_KINETIS_FS_TOKEN_DATA_IN, ep, nak_limit); //dispatch packet
 
                 pktsize = b_newToken.desc >> 16; // how many bytes we actually got
 
-                HOST_DUBUG("pktsize1: %i/%i \r\n", pktsize,maxpktsize);
+                HOST_DUBUG("pktsizem: %i/%i \r\n", pktsize,maxpktsize);
 #if ENABLE_UHS_DEBUGGING
                 uint8_t i = 0;
-                HOST_DUBUG("-----Data packet(%d): ",rcode);
+                HOST_DUBUG("-----rcode=0x%2.2x Data packet: ",rcode);
                 for(i = 0; i < pktsize; i++) {
                         HOST_DUBUG("%02x ", data_in_buf[i]);
                 }
@@ -686,7 +685,7 @@ uint8_t UHS_NI UHS_KINETIS_FS_HOST::InTransfer(UHS_EpInfo *pep, uint16_t nak_lim
                         //HOST_DUBUG(">>>>hrUNDEF>>>> InTransfer Problem! dispatchPkt ", rcode);
                         break; //should be 0, indicating ACK. Else return error code.
                 }
-                HOST_DUBUG("pktsize2: %u, %u, %u", pktsize,*nbytesptr,nbytes );
+                HOST_DUBUG("pktsizeu: %u, %u, %u", pktsize,*nbytesptr,nbytes );
                 if(pktsize + *nbytesptr > nbytes) { // adjust pktsize if we don't need all the bytes we just got
                         pktsize = nbytes - *nbytesptr;
                 }
@@ -702,7 +701,7 @@ uint8_t UHS_NI UHS_KINETIS_FS_HOST::InTransfer(UHS_EpInfo *pep, uint16_t nak_lim
                 if((pktsize < maxpktsize) || (*nbytesptr >= nbytes)) {
                         pep->bmRcvToggle = ep0_rx_data_toggle;
                         rcode = 0;
-                        HOST_DUBUG("PktReceived\r\n");
+                        HOST_DUBUG("PacketGood\r\n");
                         break;
                 }
         }
@@ -813,7 +812,7 @@ uint8_t UHS_NI UHS_KINETIS_FS_HOST::ctrlReqClose(UHS_EpInfo *pep, uint8_t bmReqT
 
         if(((bmReqType & 0x80) == 0x80) && pep && left && dataptr) {
                 //Serial.println("Drain");
-                HOST_DUBUG("ctrlReqRead Sinking %i\r\n", left);
+                HOST_DUBUG("ctrlReqClose Sinking %i\r\n", left);
                 // If reading, sink the rest of the data.
                 while(left) {
                         uint16_t read = nbytes;

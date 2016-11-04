@@ -48,7 +48,6 @@ void setup() {
         USB_HOST_SERIAL.println("KINETIS_EHCI_TEST 161024_1822.");
         while(KINETIS_EHCI_Usb.Init(1000) != 0);
         KINETIS_EHCI_Usb.vbusPower(vbus_on);
-        //KINETIS_EHCI_Usb.vbusPower(vbus_off);
         // printf may be used after at least 1 host init
         printf("\r\n\r\nSWI_IRQ_NUM %i\r\n", SWI_IRQ_NUM);
         printf("\r\n\r\nUSB HOST READY.\r\n");
