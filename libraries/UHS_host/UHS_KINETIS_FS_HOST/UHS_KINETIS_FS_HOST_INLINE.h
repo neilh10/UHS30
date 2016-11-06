@@ -448,6 +448,7 @@ uint8_t UHS_NI UHS_KINETIS_FS_HOST::SetAddress(uint8_t addr, uint8_t ep, UHS_EpI
         USBTRACE2(" NAK Limit: ", nak_limit);
         USBTRACE("\r\n");
 
+        //HOST_DUBUG("\r\nAddress: %2.2x. EP: %2.2x, NAK Power: %2.2x, NAK Limit: %u\r\n", addr, ep, (*ppep)->bmNakPower, nak_limit);
         // address and low speed enable
         USB0_ADDR = addr | ((p->speed) ? 0 : USB_ADDR_LSEN);
 
@@ -506,6 +507,7 @@ uint8_t UHS_NI UHS_KINETIS_FS_HOST::dispatchPkt(uint8_t token, uint8_t ep, uint1
         //HOST_DUBUG("dispatchPkt: token %x, ep: %i, nak_limit: %i \r\n", token, ep, nak_limit);
         //printf("dispatchPkt: token %x, ep: %i, nak_limit: %i \r\n", token, ep, nak_limit);
 
+        // have to monitor for UHS_HOST_ERROR_MEM_LAT and auto-retry
         rcode = UHS_HOST_ERROR_TIMEOUT;
         newError = false;
         newToken = false;
@@ -543,7 +545,6 @@ uint8_t UHS_NI UHS_KINETIS_FS_HOST::dispatchPkt(uint8_t token, uint8_t ep, uint1
                                         //printf("New rcode: 0x%2.2x\r\n", rcode);
                                 } // error
                                 if(newToken) { // token completed
-
                                         if(rcode == UHS_HOST_ERROR_TIMEOUT) rcode = UHS_HOST_ERROR_NONE;
                                         newToken = false;
                                 } // token completed
@@ -554,6 +555,7 @@ uint8_t UHS_NI UHS_KINETIS_FS_HOST::dispatchPkt(uint8_t token, uint8_t ep, uint1
                                 //        printf("isrPid: 0x%8.8x, rcode: 0x%2.2x\r\n", isrPid, rcode);
                                 //}
                                 break;
+
                         }
 
                 }
@@ -603,7 +605,6 @@ uint8_t UHS_NI UHS_KINETIS_FS_HOST::OutTransfer(UHS_EpInfo *pep, uint16_t nak_li
                 rcode = UHS_HOST_ERROR_BAD_MAX_PACKET_SIZE;
 
         uint8_t* p_buffer = data; // local copy
-        // regWr(rHCTL, (pep->bmSndToggle) ? bmSNDTOG1 : bmSNDTOG0); //set toggle value
         ep0_tx_data_toggle = pep->bmSndToggle;
 
         while(bytes_left && !rcode) {
@@ -616,7 +617,6 @@ uint8_t UHS_NI UHS_KINETIS_FS_HOST::OutTransfer(UHS_EpInfo *pep, uint16_t nak_li
                 p_buffer += bytes_tosend;
         }//while( bytes_left...
 
-        //pep->bmSndToggle = (regRd(rHRSL) & bmSNDTOGRD) ? 1 : 0; //bmSNDTOG1 : bmSNDTOG0;  //update toggle
         pep->bmSndToggle = ep0_tx_data_toggle;
         return ( rcode); //should be 0 in all cases
 }
@@ -642,8 +642,7 @@ uint8_t UHS_NI UHS_KINETIS_FS_HOST::InTransfer(UHS_EpInfo *pep, uint16_t nak_lim
 
         *nbytesptr = 0;
 
-        // data0/1 toggle automatic
-        // regWr(rHCTL, (pep->bmRcvToggle) ? bmRCVTOG1 : bmRCVTOG0); //set toggle value
+        // data0/1 toggle is automatic
         ep0_rx_data_toggle = pep->bmRcvToggle;
 
         uint32_t datalen = 0;

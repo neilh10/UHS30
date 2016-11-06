@@ -198,6 +198,11 @@ uint8_t UHS_USB_HOST_BASE::doSoftReset(uint8_t parent, uint8_t port, uint8_t add
  *
  */
 
+#if defined(LOAD_UHS_ENUMERATION_OPT )
+
+#include LOAD_UHS_ENUMERATION_OPT
+
+#else
 /**
  * Enumerates interfaces on devices
  *
@@ -527,6 +532,7 @@ again:
         }
         return rcode;
 }
+#endif  //LOAD_UHS_ENUMERATION_OPT
 
 /**
  * Removes a device from the tables
@@ -927,8 +933,7 @@ uint8_t UHS_USB_HOST_BASE::ctrlReq(uint8_t addr, uint64_t Request, uint16_t nbyt
         //        Serial.println("");
         UHS_EpInfo *pep = ctrlReqOpen(addr, Request, dataptr);
         if(!pep) {
-                //                Serial.println("No pep");
-                HOST_DUBUG("ctrlReq1: ERROR_NULL_EPINFO addr: %d\r\n",addr);
+                HOST_DUBUG("ctrlReq1: ERROR_NULL_EPINFO addr: %d\r\n", addr);
                 return UHS_HOST_ERROR_NULL_EPINFO;
         }
         uint8_t rt = (uint8_t)(Request & 0xFFU);
@@ -942,21 +947,25 @@ uint8_t UHS_USB_HOST_BASE::ctrlReq(uint8_t addr, uint64_t Request, uint16_t nbyt
                         while(left) {
                                 // Bytes read into buffer
                                 uint16_t read = nbytes;
-                                HOST_DUBUG("ctrlReq2: left: %i, read:%i, nbytes %i\r\n",  left, read,nbytes);
+                                HOST_DUBUG("ctrlReq2: left: %i, read:%i, nbytes %i\r\n", left, read, nbytes);
                                 rcode = ctrlReqRead(pep, &left, &read, nbytes, dataptr);
 
                                 if(rcode) {
                                         return rcode;
                                 }
-                                if (acceptBuf) {
-                                        HOST_DUBUG("ctrlReq3: acceptBuffer sz %i\n\r",  read);
-                                        left =0;
-                                }
+#if UHS_DEVICE_WINDOWS_USB_SPEC_VIOLATION_DESCRIPTOR_DEVICE
+                                //if (acceptBuf) {
+                                 //       HOST_DUBUG("ctrlReq3: acceptBuffer sz %i\n\r",  read);
+                                //        left =0;
+                                //}
 
-                                if(read < nbytes) {
-                                        HOST_DUBUG("ctrlReq4: read %i, nbytes %i\r\n",  read,nbytes);
+                                // Should only be used for GET_DESCRIPTOR USB_DESCRIPTOR_DEVICE
+                                if(!addr && ((Request & (uint32_t)0xFF00FF00U) == (((uint32_t)USB_REQUEST_GET_DESCRIPTOR << 8) | ((uint32_t)USB_DESCRIPTOR_DEVICE << 24)))) {
+                                        HOST_DUBUG("ctrlReq3: acceptBuffer sz %i nbytes %i left %i\n\r", read, nbytes, left);
+                                        left = 0;
                                         break;
                                 }
+#endif
                         }
                 } else //OUT transfer
                 {
