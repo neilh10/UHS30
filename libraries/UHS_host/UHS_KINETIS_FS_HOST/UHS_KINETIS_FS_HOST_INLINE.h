@@ -320,7 +320,7 @@ void UHS_NI UHS_KINETIS_FS_HOST::ISRTask(void) {
 #if defined(LOAD_UHS_PRINTF_HELPER)
                                         printf("\r\nMEMORY LATENCY PROBLEM.\r\n");
 #endif
-                                        isrError = UHS_HOST_ERROR_NAK; // Error was due to memory latency.
+                                        isrError = UHS_HOST_ERROR_MEM_LAT; // Error was due to memory latency.
                                 }
                                 break;
                                 // Completed good packets
@@ -459,7 +459,10 @@ uint8_t UHS_NI UHS_KINETIS_FS_HOST::SetAddress(uint8_t addr, uint8_t ep, UHS_EpI
 
         // Disable automatic retries for 1 NAK, Set hub for low-speed device
         USB0_ENDPT0 = USB_ENDPT_EPRXEN | USB_ENDPT_EPTXEN | USB_ENDPT_EPHSHK |
+                //nh works for adaLCD/photon
                 ((nak_limit != 1U) ? 0 : USB_ENDPT_RETRYDIS) |
+                //nh.!work for FTDI/adaLCD/photon
+                //((nak_limit != 0U) ? 0 : USB_ENDPT_RETRYDIS) |
                 ((p->speed) ? 0 : USB_ENDPT_HOSTWOHUB);
 
         // set USB0_SOFTHLD depending on the maxPktSize
@@ -536,7 +539,7 @@ uint8_t UHS_NI UHS_KINETIS_FS_HOST::dispatchPkt(uint8_t token, uint8_t ep, uint1
                 last_mark = micros(); // hopefully now in sync with the SOF
                 USB0_TOKEN = token | ep; //  Dispatch to endpoint.
                 //wait for transfer completion
-                while(/*(long)(millis() - timeout) < 0L &&*/ !condet) {
+                while(!condet) {
                         if(newError || newToken) {
                                 if(newError) {
                                         newError = false;
@@ -554,6 +557,12 @@ uint8_t UHS_NI UHS_KINETIS_FS_HOST::dispatchPkt(uint8_t token, uint8_t ep, uint1
                                 //        printf("dispatchPkt: token %x, ep: %i, nak_limit: %i \r\n", token, ep, nak_limit);
                                 //        printf("isrPid: 0x%8.8x, rcode: 0x%2.2x\r\n", isrPid, rcode);
                                 //}
+#if 1//ALT001 this works adaLCD/photon
+                                if(nak_limit && rcode == UHS_HOST_ERROR_NAK) {
+                                        nak_limit--;
+                                        if(nak_limit) continue; // retry
+                                }
+#endif //ALT001
                                 break;
 
                         }
@@ -613,6 +622,12 @@ uint8_t UHS_NI UHS_KINETIS_FS_HOST::OutTransfer(UHS_EpInfo *pep, uint16_t nak_li
                 bytes_tosend = (bytes_left >= maxpktsize) ? maxpktsize : bytes_left;
                 endpoint0_transmit(p_buffer, bytes_tosend); // setup internal buffer
                 rcode = dispatchPkt(UHS_KINETIS_FS_TOKEN_DATA_OUT, ep, nak_limit); //dispatch packet to ep
+                if(rcode == UHS_HOST_ERROR_MEM_LAT) {
+                        // something we need to do here, but what?
+                        // datasheet isn't clear, just says that these are transient
+                        rcode = UHS_HOST_ERROR_NAK;
+                        break;
+                }
                 bytes_left -= bytes_tosend;
                 p_buffer += bytes_tosend;
         }//while( bytes_left...
@@ -659,9 +674,15 @@ uint8_t UHS_NI UHS_KINETIS_FS_HOST::InTransfer(UHS_EpInfo *pep, uint16_t nak_lim
                 endpoint0_receive(data_in_buf, datalen); // setup internal buffer
                  HOST_DUBUG("dispatchP: %i", nak_limit );
                 rcode = dispatchPkt(UHS_KINETIS_FS_TOKEN_DATA_IN, ep, nak_limit); //dispatch packet
+                //digitalWriteFast(2, LOW);
+                if(rcode == UHS_HOST_ERROR_MEM_LAT) {
+                        // something we need to do here, but what?
+                        // datasheet isn't clear, just says that these are transient
+                        rcode = UHS_HOST_ERROR_NAK;
+                        break;
+                }
 
                 pktsize = b_newToken.desc >> 16; // how many bytes we actually got
-
                 HOST_DUBUG("pktsizem: %i/%i \r\n", pktsize,maxpktsize);
 #if ENABLE_UHS_DEBUGGING
                 uint8_t i = 0;
@@ -704,6 +725,7 @@ uint8_t UHS_NI UHS_KINETIS_FS_HOST::InTransfer(UHS_EpInfo *pep, uint16_t nak_lim
                         break;
                 }
         }
+        //digitalWriteFast(2, LOW);
         return ( rcode);
 }
 
@@ -855,7 +877,7 @@ int16_t UHS_NI UHS_KINETIS_FS_HOST::Init(int16_t mseconds) {
         // SIM - enable clock
         SIM_SCGC4 |= SIM_SCGC4_USBOTG;
 #ifdef HAS_KINETIS_MPU
-	MPU_RGDAAC0 |= 0x03000000;
+        MPU_RGDAAC0 |= 0x03000000;
 #endif
 
         // reset USB module

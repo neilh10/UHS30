@@ -7,11 +7,11 @@
 
 // Patch printf so we can use it.
 #define LOAD_UHS_PRINTF_HELPER
-//#define DEBUG_PRINTF_EXTRA_HUGE 1
+#define DEBUG_PRINTF_EXTRA_HUGE 1
 //#define DEBUG_PRINTF_EXTRA_HUGE_UHS_HOST 1
 //#define DEBUG_PRINTF_EXTRA_HUGE_USB_HUB 1
 //#define DEBUG_PRINTF_EXTRA_HUGE_USB_HOST_SHIELD 1
-//#define DEBUG_PRINTF_EXTRA_HUGE_ACM_HOST 1
+#define DEBUG_PRINTF_EXTRA_HUGE_ACM_HOST 1
 //#define ENABLE_UHS_DEBUGGING 1
 #define UHS_DEBUG_USB_ADDRESS 1
 // Redirect debugging and printf
@@ -30,8 +30,8 @@
 // This needs testing.
 #define LOAD_UHS_CDC_ACM_FTDI
 
-#define LOAD_UHS_ENUMERATION_OPT "UHS_host_INLINE_enumopt.h"
-#define PROG_NAME "Wk161106_0943CDC-ACM test program...\r\n"
+//#define LOAD_UHS_ENUMERATION_OPT "UHS_host_INLINE_enumopt.h"
+#define PROG_NAME "Wk161106_1211CDC-ACM test program...\r\n"
 
 #include <Arduino.h>
 #ifdef true
