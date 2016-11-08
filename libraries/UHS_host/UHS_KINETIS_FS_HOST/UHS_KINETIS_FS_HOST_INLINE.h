@@ -442,7 +442,7 @@ uint8_t UHS_NI UHS_KINETIS_FS_HOST::SetAddress(uint8_t addr, uint8_t ep, UHS_EpI
         nak_limit = (0x0001UL << (((*ppep)->bmNakPower > USB_NAK_MAX_POWER) ? USB_NAK_MAX_POWER : (*ppep)->bmNakPower));
         nak_limit--;
 
-        USBTRACE2("\r\nAddress: ", addr);
+        USBTRACE2("\r\nSetAddress: ", addr);
         USBTRACE2(" EP: ", ep);
         USBTRACE2(" NAK Power: ", (*ppep)->bmNakPower);
         USBTRACE2(" NAK Limit: ", nak_limit);
@@ -459,8 +459,10 @@ uint8_t UHS_NI UHS_KINETIS_FS_HOST::SetAddress(uint8_t addr, uint8_t ep, UHS_EpI
 
         // Disable automatic retries for 1 NAK, Set hub for low-speed device
         USB0_ENDPT0 = USB_ENDPT_EPRXEN | USB_ENDPT_EPTXEN | USB_ENDPT_EPHSHK |
+                  //((nak_limit == 0U) ? 0 : USB_ENDPT_RETRYDIS) |
                 //nh works for adaLCD/photon
-                ((nak_limit != 1U) ? 0 : USB_ENDPT_RETRYDIS) |
+                //((nak_limit != 1U) ? 0 : USB_ENDPT_RETRYDIS) |
+                ((nak_limit == 1U) ?  USB_ENDPT_RETRYDIS : 0) |
                 //nh.!work for FTDI/adaLCD/photon
                 //((nak_limit != 0U) ? 0 : USB_ENDPT_RETRYDIS) |
                 ((p->speed) ? 0 : USB_ENDPT_HOSTWOHUB);

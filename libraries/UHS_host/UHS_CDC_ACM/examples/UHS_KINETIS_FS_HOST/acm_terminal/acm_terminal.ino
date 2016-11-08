@@ -31,7 +31,7 @@
 #define LOAD_UHS_CDC_ACM_FTDI
 
 //#define LOAD_UHS_ENUMERATION_OPT "UHS_host_INLINE_enumopt.h"
-#define PROG_NAME "Wk161106_1211CDC-ACM test program...\r\n"
+#define PROG_NAME "Wk161107_1752CDC-ACM test program...\r\n"
 
 #include <Arduino.h>
 #ifdef true
