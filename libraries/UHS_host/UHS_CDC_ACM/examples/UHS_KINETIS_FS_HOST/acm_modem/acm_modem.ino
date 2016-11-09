@@ -33,7 +33,7 @@
 #define LOAD_UHS_CDC_ACM_FTDI
 
 //#define LOAD_UHS_ENUMERATION_OPT "UHS_host_INLINE_enumopt.h"
-#define PROG_NAME "Wk161108_1620 FS modem\r\n"
+#define PROG_NAME "Wk1611081620 FS modem\r\n"
 
 #include <Arduino.h>
 #ifdef true
@@ -196,7 +196,7 @@ uint8_t in_keyboard() {
         uint8_t buf[USBPKT_MAX_SZ ];
         uint16_t rcvd = USBPKT_MAX_SZ ;
          uint8_t rcode=0;
-         //putchar('r');
+         
          rcode = Acm->Read(&rcvd, buf);
          if(rcode && (rcode != UHS_HOST_ERROR_NAK)) {
                 printf("\r\nError %i on read\r\n", rcode);
@@ -249,7 +249,6 @@ void loop() {
 
                   case USBM_TTY_TX_V: //Tx USBserial  {v..} and transition to USBS_TTY_RX_V
                       rcode = Acm->Write(PH_VER_REQ_SZ, &ph_ver_req[0]);
-                      printf("\n\rOutTx %s",ph_ver_req);
                        if(rcode) {
                                 printf("\r\nTX_V:Error %i on write\r\n", rcode);
                                 //return in_data;
