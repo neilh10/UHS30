@@ -12,8 +12,10 @@
 //#define DEBUG_PRINTF_EXTRA_HUGE_USB_HUB 1
 //#define DEBUG_PRINTF_EXTRA_HUGE_USB_HOST_SHIELD 1
 //#define DEBUG_PRINTF_EXTRA_HUGE_ACM_HOST 1
+//#define ENABLE_UHS_DEBUGGING 1
 //#define UHS_DEBUG_USB_ADDRESS 1
 // Redirect debugging and printf
+#define UHS_DEVICE_WINDOWS_USB_SPEC_VIOLATION_DESCRIPTOR_DEVICE 1
 #define USB_HOST_SERIAL Serial1
 
 
@@ -27,6 +29,9 @@
 #define LOAD_UHS_CDC_ACM_PROLIFIC
 // This needs testing.
 #define LOAD_UHS_CDC_ACM_FTDI
+
+//#define LOAD_UHS_ENUMERATION_OPT "UHS_host_INLINE_enumopt.h"
+#define PROG_NAME "Wk161108_1520 FS modem\r\n"
 
 #include <Arduino.h>
 #ifdef true
@@ -54,7 +59,7 @@ void MY_ACM::OnRelease(void) {
 
 uint8_t MY_ACM::OnStart(void) {
         uint8_t rcode;
-        // Set DTR = 1 RTS=1
+        // Set DTR = 1 RTS = 1
         rcode = SetControlLineState(3);
 
         if(rcode) {
@@ -97,6 +102,11 @@ void setup() {
         delay(250);
         digitalWriteFast(LED_BUILTIN, HIGH);
         delay(250);
+
+        // USB data switcher, PC -> device.
+        pinMode(5,OUTPUT),
+        digitalWriteFast(5, HIGH);
+
         KINETIS_Usb = new UHS_KINETIS_FS_HOST();
         hub_KINETIS1 = new UHS_USBHub(KINETIS_Usb);
         digitalWriteFast(LED_BUILTIN, LOW);
@@ -114,83 +124,140 @@ void setup() {
         delay(250);
         USB_HOST_SERIAL.begin(115200);
 
-        printf("\r\nFS modem CDC-ACM 161025_2302");
-        while(KINETIS_Usb.Init(1000) != 0);
+        printf_P(PSTR("\r\n"
+                PROG_NAME ));
+
+        while(KINETIS_Usb->Init(1000) != 0);
          printf("\r\n't' for tty\r\n");
 }
 typedef enum {
-        US_INIT=0,
-        US_TTY
+        USBS_INIT=0,
+        USBS_TTY, // Starting serial processing, waiting for input from serial TTY or USB
+                             // if USBserial string {c..}, transition to USBS_TTY_TX_V
+                             // if ESC change  to USBS_INIT
 } usb_state_t;
-usb_state_t  usbfs_state_e = US_INIT;
-usb_state_t  usbfs_state_old_e = US_INIT;
+typedef enum {
+         USBM_TTY_RX_V,// Monitor USBserial and output to screen.
+                                        // for {v, ..} change state to USBS_TTY_TX_V
+                                        // if ESC change  to USBS_INIT
+         USBM_INIT= USBM_TTY_RX_V,
+         USBM_TTY_TX_V,//Tx USBserial  {v..} and transition to USBS_TTY_RX_V
+} usb_msg_state_t;
 
+usb_state_t  usbfs_state_e   = USBS_INIT;
+usb_state_t  usbfs_state_old_e = USBS_INIT;
+usb_msg_state_t usbm_state_e = USBM_INIT;
+
+#define PH_VER_REQ_SZ 3
+uint8_t  ph_ver_req[PH_VER_REQ_SZ+1] = "{v}";
+#define ASCII_ESC 27
+
+//****************************************************************
+ void usbfs_state_USBS_TTY() {
+     //Event move to USBS_TTY
+         usbfs_state_e=USBS_TTY;
+         usbm_state_e=USBM_INIT;
+ }
+ //****************************************************************
+uint8_t in_keyboard() {
+     uint8_t in_data =  0;
+     uint8_t rcode =0;
+
+      if(USB_HOST_SERIAL.available()) {
+         digitalWriteFast(LED_BUILTIN, HIGH);
+         in_data = USB_HOST_SERIAL.read();
+
+         if (ASCII_ESC == in_data) {
+              usbfs_state_e=USBS_INIT;
+         } else {
+                /* send to client */
+                 rcode = Acm->Write(1, &in_data);
+                  if(rcode) {
+                          in_data = ASCII_ESC;
+                        printf("\r\nError %i on write\r\n", rcode);
+                        return in_data;
+                   }
+          }
+          digitalWriteFast(LED_BUILTIN, LOW);
+      }
+     return in_data;
+}
+//****************************************************************
+ uint8_t  usbm_tty_rx_check() {
+        /* read from client
+         * buffer size must be greater or equal to max.packet size
+         * it is set to the largest possible maximum packet size here.
+         * It must not be set less than 3.
+         */
+#define USBPKT_MAX_SZ 64
+        uint8_t buf[USBPKT_MAX_SZ ];
+        uint16_t rcvd = USBPKT_MAX_SZ ;
+         uint8_t rcode=0;
+         //putchar('r');
+         rcode = Acm->Read(&rcvd, buf);
+         if(rcode && (rcode != UHS_HOST_ERROR_NAK)) {
+                printf("\r\nError %i on read\r\n", rcode);
+                return rcode ;
+         }
+         if(rcvd) {
+             // More than zero bytes received, display the text.
+             for(uint16_t i = 0; i < rcvd; i++) {
+                    putc((char)buf[i], stdout);
+                    if ( '}' == buf[i] ) {usbm_state_e = USBM_TTY_TX_V; }
+             }
+             fflush(stdout);
+         }
+         return rcode;
+ }
+//****************************************************************
 void loop() {
-  uint8_t d;
+  uint8_t in_d=0;
 
   if (usbfs_state_old_e!=usbfs_state_e) {
      printf("StateChange To=%d, Frm=%d\r\n",usbfs_state_e,usbfs_state_old_e);
      usbfs_state_old_e=usbfs_state_e;
   }
 
-  if (US_TTY!=usbfs_state_e) {
-     if (USB_HOST_SERIAL.available() > 0) {
+  if (USBS_INIT == usbfs_state_e) {
+         if (USB_HOST_SERIAL.available() > 0) {
+                  in_d =  in_keyboard();
+                //d = USB_HOST_SERIAL.read();
+                 if (in_d == 's') {
+                          printf("USB0_INTEN: 0x%x ", USB0_INTEN);
+                          printf("USB0_CTL: 0x%x\r\n", USB0_CTL);
+                    //} else if(d=='p') {
+                    ///KINETIS_Usb.poopOutStatus();
+                  } else if(in_d == 't') {
 
-        d = USB_HOST_SERIAL.read();
-        if(d=='s') {
-            printf("USB0_INTEN: 0x%x ", USB0_INTEN);
-            printf("USB0_CTL: 0x%x\r\n", USB0_CTL);
-        //} else if(d=='p') {
-        ///KINETIS_Usb.poopOutStatus();
-        } else if(d=='t') {
-            usbfs_state_e=US_TTY;
-            printf("TTY mode <ESC> to exit\r\n");
+                        usbfs_state_USBS_TTY();
+                        printf("TTY mode <ESC> to exit\r\n");
+                  }
         }
-      }
+   }else  if(Acm->isReady() )   {
+         uint8_t rcode;
 
-   }else if(Acm.isReady() ) {
-                uint8_t rcode;
+         /* check for any user  ESC */
+         if ( ASCII_ESC == (in_d =  in_keyboard()) ) {return;}
 
-                /* read the keyboard */
-                if(USB_HOST_SERIAL.available()) {
-                        digitalWriteFast(LED_BUILTIN, HIGH);
-                        uint8_t data = USB_HOST_SERIAL.read();
-#define ASCII_ESC 27
-                        if (ASCII_ESC ==data) {
-                                usbfs_state_e=US_INIT;
-                        }else {
-                                /* send to client */
-                                rcode = Acm->Write(1, &data);
-                                if(rcode) {
-                                   printf("\r\nError %i on write\r\n", rcode);
-                                   return;
-                                }
-                        }
-                        digitalWriteFast(LED_BUILTIN, LOW);
-                }
+         digitalWriteFast(LED_BUILTIN, HIGH);
+         switch (usbm_state_e) {
+                  case  USBM_TTY_RX_V:
+                       usbm_tty_rx_check();
+                      break;
 
+                  case USBM_TTY_TX_V: //Tx USBserial  {v..} and transition to USBS_TTY_RX_V
+                      rcode = Acm->Write(PH_VER_REQ_SZ, &ph_ver_req[0]);
+                      printf("\n\rOutTx %s",ph_ver_req);
+                       if(rcode) {
+                                printf("\r\nTX_V:Error %i on write\r\n", rcode);
+                                //return in_data;
+                           } else {
+                                 usbm_state_e = USBM_TTY_RX_V;
+                           }
+                      break;
+                  default: break;
+              }
+                digitalWriteFast(LED_BUILTIN, LOW);
 
-                /* read from client
-                 * buffer size must be greater or equal to max.packet size
-                 * it is set to the largest possible maximum packet size here.
-                 * It must not be set less than 3.
-                 */
-                uint8_t buf[64];
-                uint16_t rcvd = 64;
-                rcode = Acm->Read(&rcvd, buf);
-                if(rcode && rcode != hrNAK) {
-                        printf("\r\nError %i on read\r\n", rcode);
-                        return;
-                }
-
-                if(rcvd) {
-                        digitalWriteFast(LED_BUILTIN, HIGH);
-                        // More than zero bytes received, display the text.
-                        for(uint16_t i = 0; i < rcvd; i++) {
-                                putc((char)buf[i], stdout);
-                        }
-                        fflush(stdout);
-                        digitalWriteFast(LED_BUILTIN, LOW);
-                }
-        }
-}
+    }
+ }
