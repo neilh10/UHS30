@@ -14,10 +14,12 @@
 //#define DEBUG_PRINTF_EXTRA_HUGE_ACM_HOST 1
 //#define ENABLE_UHS_DEBUGGING 1
 //#define UHS_DEBUG_USB_ADDRESS 1
+
 // Redirect debugging and printf
-#define UHS_DEVICE_WINDOWS_USB_SPEC_VIOLATION_DESCRIPTOR_DEVICE 1
 #define USB_HOST_SERIAL Serial1
 
+// Invoke a large memory model - Andrew calls it thus
+#define UHS_DEVICE_WINDOWS_USB_SPEC_VIOLATION_DESCRIPTOR_DEVICE 1
 
 // These all get combined under UHS_CDC_ACM multiplexer.
 // Each should only add a trivial amount of code.
@@ -31,7 +33,7 @@
 #define LOAD_UHS_CDC_ACM_FTDI
 
 //#define LOAD_UHS_ENUMERATION_OPT "UHS_host_INLINE_enumopt.h"
-#define PROG_NAME "Wk161108_1520 FS modem\r\n"
+#define PROG_NAME "Wk161108_1620 FS modem\r\n"
 
 #include <Arduino.h>
 #ifdef true
@@ -124,11 +126,10 @@ void setup() {
         delay(250);
         USB_HOST_SERIAL.begin(115200);
 
-        printf_P(PSTR("\r\n"
-                PROG_NAME ));
+        printf("\r\n" PROG_NAME );
 
         while(KINETIS_Usb->Init(1000) != 0);
-         printf("\r\n't' for tty\r\n");
+         printf("\r\n't' for tty - T36Host-to-Photon. Then {v} to start repitive test\r\n");
 }
 typedef enum {
         USBS_INIT=0,
@@ -150,6 +151,7 @@ usb_msg_state_t usbm_state_e = USBM_INIT;
 
 #define PH_VER_REQ_SZ 3
 uint8_t  ph_ver_req[PH_VER_REQ_SZ+1] = "{v}";
+
 #define ASCII_ESC 27
 
 //****************************************************************
@@ -158,6 +160,7 @@ uint8_t  ph_ver_req[PH_VER_REQ_SZ+1] = "{v}";
          usbfs_state_e=USBS_TTY;
          usbm_state_e=USBM_INIT;
  }
+
  //****************************************************************
 uint8_t in_keyboard() {
      uint8_t in_data =  0;
@@ -221,7 +224,6 @@ void loop() {
   if (USBS_INIT == usbfs_state_e) {
          if (USB_HOST_SERIAL.available() > 0) {
                   in_d =  in_keyboard();
-                //d = USB_HOST_SERIAL.read();
                  if (in_d == 's') {
                           printf("USB0_INTEN: 0x%x ", USB0_INTEN);
                           printf("USB0_CTL: 0x%x\r\n", USB0_CTL);
@@ -261,3 +263,4 @@ void loop() {
 
     }
  }
+//End of acm_modem.ino
